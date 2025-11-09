@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🦀 Rust Mini Server Docs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>
+      hljs.highlightAll();
+    </script>
+    <style>
+      @keyframes fadeUp {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .fade-up {
+        animation: fadeUp 1s ease forwards;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="p-5 flex justify-between items-center bg-slate-950/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+      <h1 class="text-2xl font-bold text-orange-400 tracking-wide">🦀 Rust Mini Server</h1>
+      <a href="#code" class="text-gray-300 hover:text-orange-400 transition">View Code</a>
+    </nav>
+
+    <!-- Hero -->
+    <header class="text-center mt-16 fade-up px-4">
+      <h2 class="text-4xl md:text-5xl font-extrabold text-orange-400 mb-4">
+        Build a Web Server in Pure Rust
+      </h2>
+      <p class="text-gray-300 max-w-2xl mx-auto text-lg">
+        This mini documentation explains how a basic Rust TCP web server works — from reading requests to serving HTML files.  
+        Yes, the page you’re viewing is **served by that same Rust server!**
+      </p>
+    </header>
+
+    <!-- Section: How It Works -->
+    <section class="max-w-4xl mx-auto mt-16 px-6 space-y-8 fade-up">
+      <div class="bg-slate-800/60 p-6 rounded-2xl shadow-lg hover:shadow-orange-500/10 transition">
+        <h3 class="text-2xl font-bold text-orange-300 mb-3">⚙️ 1. Listening for Connections</h3>
+        <p class="text-gray-300">
+          Rust’s <code>TcpListener</code> listens for incoming connections on <code>127.0.0.1:7878</code>.  
+          Each time a browser connects, the server spawns a handler that reads and responds to the request.
+        </p>
+      </div>
+
+      <div class="bg-slate-800/60 p-6 rounded-2xl shadow-lg hover:shadow-orange-500/10 transition">
+        <h3 class="text-2xl font-bold text-orange-300 mb-3">📨 2. Reading the Request</h3>
+        <p class="text-gray-300">
+          When a client sends an HTTP request, Rust reads the data stream into a buffer.  
+          It then interprets the bytes as UTF-8 text so we can parse routes like <code>/</code>.
+        </p>
+      </div>
+
+      <div class="bg-slate-800/60 p-6 rounded-2xl shadow-lg hover:shadow-orange-500/10 transition">
+        <h3 class="text-2xl font-bold text-orange-300 mb-3">📄 3. Serving HTML Files</h3>
+        <p class="text-gray-300">
+          The server checks which file to serve (for example, <code>public/index.html</code>)  
+          and sends back a valid HTTP response with the proper headers and HTML content.
+        </p>
+      </div>
+
+      <div class="bg-slate-800/60 p-6 rounded-2xl shadow-lg hover:shadow-orange-500/10 transition">
+        <h3 class="text-2xl font-bold text-orange-300 mb-3">⚡ 4. Sending the Response</h3>
+        <p class="text-gray-300">
+          The Rust server writes the response bytes to the TCP stream, including headers like
+          <code>Content-Type</code> and <code>Content-Length</code>.  
+          This is how browsers know how to render your page.
+        </p>
+      </div>
+    </section>
+
+    <!-- Code Section -->
+    <section id="code" class="max-w-5xl mx-auto mt-20 px-6 fade-up">
+      <h2 class="text-3xl font-bold text-orange-400 mb-6 text-center">📜 Full Rust Server Code</h2>
+
+      <div class="relative bg-[#1E1E1E] rounded-2xl shadow-xl overflow-hidden">
+        <button
+          onclick="copyCode()"
+          class="absolute top-3 right-3 bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-1 rounded-lg transition"
+        >
+          Copy
+        </button>
+        <pre><code class="language-rust text-sm">
+use std::fs;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+
+fn handle_client(mut stream: TcpStream) {
+    let mut buffer = [0; 1024];
+    stream.read(&mut buffer).unwrap();
+
+    let request = String::from_utf8_lossy(&buffer[..]);
+    println!("Received Request:\\n{}", request);
+
+    let get_root = request.starts_with("GET / ");
+
+    let (status_line, filename) = if get_root {
+        ("HTTP/1.1 200 OK", "public/index.html")
+    } else {
+        ("HTTP/1.1 404 NOT FOUND", "public/404.html")
+    };
+
+    let contents = fs::read_to_string(filename)
+        .unwrap_or_else(|_| "&lt;h1&gt;404 Not Found&lt;/h1&gt;".to_string());
+
+    let response = format!(
+        "{status_line}\\r\\nContent-Length: {}\\r\\nContent-Type: text/html\\r\\n\\r\\n{}",
+        contents.len(),
+        contents
+    );
+
+    stream.write_all(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
+}
+
+fn main() {
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    println!("🚀 Server running at http://127.0.0.1:7878");
+
+    for stream in listener.incoming() {
+        handle_client(stream.unwrap());
+    }
+}
+        </code></pre>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-20 mb-10 text-center text-gray-500 text-sm">
+      Built with ❤️ and <span class="text-orange-400 font-semibold">Rust</span> | Hosted by your local TCP server
+    </footer>
+
+    <script>
+      function copyCode() {
+        const code = document.querySelector("pre code").innerText;
+        navigator.clipboard.writeText(code).then(() => {
+          const btn = document.querySelector("button");
+          btn.innerText = "Copied!";
+          setTimeout(() => (btn.innerText = "Copy"), 1500);
+        });
+      }
+    </script>
+  </body>
+</html>
+

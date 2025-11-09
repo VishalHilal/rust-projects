@@ -1,5 +1,6 @@
-use std::net::{TcpListener, TcpStream};
+use std::fs;
 use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 
 fn handle_client(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
@@ -8,21 +9,21 @@ fn handle_client(mut stream: TcpStream) {
     let request = String::from_utf8_lossy(&buffer[..]);
     println!("Received Request:\n{}", request);
 
-    // Create a simple HTML page
-    let html = r#"
-        <html>
-            <head><title>Rust HTTP Server</title></head>
-            <body style="font-family: sans-serif; text-align:center;">
-                <h1>Hello from Rust </h1>
-                <p>This page is served by your Rust TCP server!</p>
-            </body>
-        </html>
-    "#;
+    // Only serve index.html for now
+    let get_root = request.starts_with("GET / ");
+
+    let (status_line, filename) = if get_root {
+        ("HTTP/1.1 200 OK", "public/index.html")
+    } else {
+        ("HTTP/1.1 404 NOT FOUND", "public/404.html")
+    };
+
+    let contents = fs::read_to_string(filename).unwrap_or_else(|_| "<h1>404 Not Found</h1>".to_string());
 
     let response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/html\r\n\r\n{}",
-        html.len(),
-        html
+        "{status_line}\r\nContent-Length: {}\r\nContent-Type: text/html\r\n\r\n{}",
+        contents.len(),
+        contents
     );
 
     stream.write_all(response.as_bytes()).unwrap();
