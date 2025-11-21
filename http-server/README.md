@@ -93,12 +93,23 @@ cargo 1.xx.x
 # 3️⃣ Clone This Project
 
 ```bash
-git clone https://github.com/yourusername/rust-mini-server.git
-cd rust-mini-server
+git clone https://github.com/VishalHilal/rust-projects.git
+cd rust-projects
+```
+then to compile and run this rust program use
+```bash
+rustc http.rs
+```
+if you are windows user then it will generate 
+```bash
+http.exe
 ```
 
-(If you want, tell me your GitHub username and I’ll customize the URL.)
-
+and if you are linux user then it will generate 
+```bash
+http
+```
+both are executable files 
 ---
 
 # 4️⃣ Project Files
